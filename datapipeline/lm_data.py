@@ -1,7 +1,8 @@
 import torch
 import torchtext
 from pathlib import Path
-from .tokenizer import SentencepieceTokenizer ,BaseTokenizer
+from .tokenizer import BaseTokenizer,SentencepieceTokenizer
+from .fields import  GetFields
 
 __all__ = ["TrainLmData"]
 class TrainLmData:
@@ -12,26 +13,17 @@ class TrainLmData:
                 raise Exception("The Tokenizer class should be inherited from BaseTokenizer")
             self.tokenizer_func = tokenizer_func
             self.use_vocab = False if isinstance(self.tokenizer_func ,SentencepieceTokenizer) else True
-            tokenizer_params = dict(tokenize = self.tokenizer_func.tokenize,
-                                    init_token = self.tokenizer_func.start_token,
-                                    eos_token = self.tokenizer_func.end_token,
-                                    pad_token = self.tokenizer_func.pad_token,
-                                    unk_token = self.tokenizer_func.unk_token,
-                                    batch_first=True,
-                                    pad_first=pad_first,
-                                   use_vocab =  self.use_vocab,
-                                    preprocessing=lambda s: [self.tokenizer_func.start_token,*s,self.tokenizer_func.end_token] )
-            self.TEXT = torchtext.data.Field(**tokenizer_params)
+            self.TEXT  = GetFields.getTextField(self.tokenizer_func,self.use_vocab,pad_first=pad_first)
 
         def set_data(self,input_file,data_type):
             setattr(self,data_type+"_dataset" , torchtext.datasets.LanguageModelingDataset(str(input_file) ,self.TEXT, newline_eos=False))
             if self.use_vocab and data_type=="train":
                 self.TEXT.build_vocab(getattr(self,"train_dataset",None))
-            print(f"{data_type} is build")
+            print(f"{data_type} dataset is built.")
             return self
 
         def split_dataset(self,input_file,fraction = (7,2,1)):
-            assert  sum(fraction)==10 , "fraction sum must be one"
+            assert  sum(fraction)==10 , "fraction sum must be Ten"
             with open(input_file) as f:
                 temp_data = f.readlines()
                 for i,data_type in zip(fraction,["train","valid","test"]):
@@ -45,8 +37,14 @@ class TrainLmData:
                     tmp_path.unlink()
             return self
 
-        def getField(self,):
+        def get_field(self,):
             return self.TEXT
+        
+        def get_vocab_size(self,):
+            if isinstance(self.tokenizer_func , SentencepieceTokenizer):
+                return self.tokenizer_func.sp.get_piece_size()
+            else:
+                return self.get_field().vocab.__len__()
 
         def detokenize(self, tokens):
             assert not tokens.dim()>2 , "Dimension should be one or two"
@@ -56,15 +54,14 @@ class TrainLmData:
         
         def build_iterators(self,batch_size=64 , bptt_len=70,device=None):
             for data_type in ["train","valid","test"]:
-                try :
-                    setattr(self , data_type+"_iterator", torchtext.data.BPTTIterator(getattr(self,data_type+"_dataset",None),
+                temp = getattr(self,data_type+"_dataset",None)
+                if temp is not None:
+                    setattr(self , data_type+"_iterator", torchtext.data.BPTTIterator(temp,
                                                                                  batch_size=batch_size,
                                                                                  bptt_len=bptt_len,
                                                                                 device=device,
                                                                                  train=True if data_type == "train" else False))
-                    print(f"{data_type} iterator build")
-                except:
-                    pass
+                    print(f"{data_type} iterator built.")
             return self
     d={}
     def __new__(cls,*args,**kwargs):
