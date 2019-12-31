@@ -5,7 +5,7 @@ from .tokenizer import BaseTokenizer,SentencepieceTokenizer
 from .fields import  GetFields
 import pandas as pd
 import numpy as np
-
+from  .utils.batch import  BatchWrapper
 class ClassifierData:
 
     class __ClassifierData:
@@ -52,13 +52,14 @@ class ClassifierData:
             for data_type in ["train","valid","test"]:
                 temp = getattr(self,data_type+"_dataset",None)
                 if temp is not None:
-                    setattr(self , data_type+"_iterator", torchtext.data.BucketIterator(temp,
-                                                                                        batch_size=batch_size,
-                                                                                        device=device,
-                                                                                        train=True if data_type == "train" else False,
-                                                                                        sort_key = lambda x : len(x.text),
-                                                                                        sort_within_batch = True,
-                                                                                       shuffle=True))
+                    temp_iter =  torchtext.data.BucketIterator(temp,
+                                                               batch_size=batch_size,
+                                                               device=device,
+                                                               train=True if data_type == "train" else False,
+                                                               sort_key = lambda x : len(x.text),
+                                                               sort_within_batch = True,
+                                                               shuffle=True)
+                    setattr(self , data_type+"_iterator",BatchWrapper(temp_iter,self.text_col,self.classification_col,self.regression_col))
                     print(f"{data_type} iterator built.")
             return self
 
