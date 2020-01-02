@@ -8,7 +8,9 @@ __all__ = ["BaseTokenizer" , "SpaceSplitTokenizer" , "SpacyTokenizer" , "Sentenc
 
 
 class BaseTokenizer:
-    """The Base class for creating a tokenizer """
+    """The Base class for creating a tokenizer.
+        Inherit  this class implement `tokenize` and `detokenize` function.
+    """
     def __init__(self,lang):
         self.lang = lang
     def tokenize(self, text):
@@ -29,7 +31,10 @@ class BaseTokenizer:
         return "<pad>"
 
 class SpaceSplitTokenizer(BaseTokenizer):
-    """The Space split tokenizer"""
+    """
+        The Space split tokenizer
+        >>> tokenizer_func = tokenizer.SpaceSplitTokenizer(lang="en")
+    """
     def __init__(self,lang):
         super().__init__(lang)
     def tokenize(self,text):
@@ -38,7 +43,10 @@ class SpaceSplitTokenizer(BaseTokenizer):
         return " ".join(tokens)
 
 class SpacyTokenizer(BaseTokenizer):
-    """The Spacy Tokenizer"""
+    """
+        The Spacy Tokenizer
+        >>> tokenizer_func = tokenizer.SpacyTokenizer(lang="en")
+    """
     def __init__(self,lang):
         super().__init__(lang)
         self.nlp = spacy.load(self.lang)
@@ -48,6 +56,11 @@ class SpacyTokenizer(BaseTokenizer):
         return " ".join(tokens)
 
 class SentencepieceTokenizer(BaseTokenizer):
+    """
+        Sentence Piece Tokenizer
+        >> config = sentence_piece.SentencePieceConfig(lang="en",input_path="hindi.txt",vocab_size=32000,model_type="bpe")
+        >> tokenizer_func = tokenizer.SentencepieceTokenizer(config)
+    """
     def __init__(self,config ):
         super().__init__(config.lang)
         self.sp  =  spm.SentencePieceProcessor()

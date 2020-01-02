@@ -3,6 +3,17 @@ from ..utils.dir_utils import create_dir
 
 __all__ = ["SentencePieceConfig"]
 class SentencePieceConfig:
+    """
+        Creating a config file for sentencepiece training and tokenizer func.
+        :args
+                :lang: The language you want to use it for .
+                :train_string: The entire train_string which can be used directly for training.
+                :kwargs:
+                    :input_path: For training give the input file path.
+                    :output_path: The saved model path.
+                    :vocab_size: Default 8K preferred 16K or 32K.
+                    :model_type: Default `unigram` can be `bpe`.
+    """
     def __init__(self,lang , train_string=None , **kwargs):
         self.lang = lang
         self.input_path = kwargs.pop("input_path" ,create_dir(Path("sentencepiece"))/"input.txt" )
